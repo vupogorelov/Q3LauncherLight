@@ -1,0 +1,741 @@
+<!DOCTYPE HTML>
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<head>
+
+
+<title>Launcher</title>
+
+<HTA:APPLICATION
+	APPLICATIONNAME="Launcher"
+	ID="Launcher"
+	VERSION="1.0"
+	SCROLL="yes"
+	BORDER="thin"
+	BORDERSTYLE="raised"
+	MAXIMIZEBUTTON = "yes"
+	MINIMIZEBUTTON = "yes"
+	SELECTION="yes"
+	NOWRAP
+	SINGLEINSTANCE="yes"/>
+
+
+	<style>@import url(frame.css)</style>
+
+
+<style>
+	BODY {
+	   font-family: verdana;
+	   font-size: 8pt;
+	   margin-top: 3px;
+	   margin-left: 3px;
+	   margin-right: 3px;
+	   margin-bottom: 3px;
+	   background-color: buttonface;
+	   background-image: url(2.jpg);}
+
+	.button {
+		font-family: Arial;
+		font-style: normal;
+		font-size: 9pt;
+		width: 200px;
+		height: 21px;
+		border-style: solid;
+		border-width: 1px;
+		border-color: darkgray;
+		background-color: transparent;}
+	
+	.text {
+	   border-style: solid;
+	   border-width: 1px;
+	   border-color: darkgray;}
+
+	.textarea {
+	   border-style: solid;
+	   border-width: 1px;
+	   border-color: darkgray;}
+
+	.label {
+		border-style: solid;
+		border-width: 1px;
+		border-color: darkgray;
+		width: 50mm;}
+	
+	.checkboxOFF {
+		border-style: solid;
+		border-width: 1px;
+		border-color: darkgray;
+		width: 5mm;}
+	
+	.select {
+		width: 50mm;}
+		
+	#pic {
+		float: left; /* Обтекание картинки текстом */
+	   }
+	   
+    #text {
+		margin-left: 110px; /* Отступ от левого края */
+	   }
+	   
+</style>
+</head>
+
+<script language="VBScript">
+
+'_____________________________________________________________________________________________________
+
+' кто где 
+' ц
+' 
+' 
+' 
+' 
+' 
+' 
+'
+'
+'
+
+'=============================================================================================
+'ОБЪЯВЛЕНИЯ ГЛОБАЛЬНЫХ КОНСТАНТ, ПЕРЕМЕННЫХ И ДР.
+'=============================================================================================
+
+Public ScriptPath
+public strScriptdir
+
+
+
+'On Error Resume Next
+'*********************************************************************************************
+'*  Обработчики событий окна
+'*********************************************************************************************
+Sub Window_OnLoad
+	
+	winWidth=600 ' ширина окна
+	winHeight=600 ' высота окна
+	self.ResizeTo winWidth, winHeight
+
+	winPosX=screen.width/2-winWidth/2
+	winPosY=screen.height/2-winHeight/2
+	window.moveTo winPosX, winPosY 'слева, сверху
+	
+	self.Focus()
+	
+	Set WshShell = CreateObject("WScript.Shell")
+	strScriptdir = WshShell.CurrentDirectory
+	
+	call ProcessLauncher()
+	' call ParserWhoWhere()
+	
+End Sub
+
+Sub Window_onBeforeUnLoad
+End Sub
+
+Sub Window_OnResize
+End Sub
+
+
+'*****************************************************************
+'* убивает заданный процесс
+'*****************************************************************
+Function KillProc(sProcName)
+	
+	Set oWMI = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\cimv2")
+	For Each objProc In oWMI.ExecQuery("SELECT * FROM Win32_Process")
+		if objProc.Caption = "wscript.exe" or objProc.Caption = sProcName or objProc.Caption = sProcName then
+			objProc.Terminate
+		end if
+	Next
+	
+End function
+
+'*****************************************************************
+'* GET запрос по HTTP
+'*****************************************************************
+Function HTTPGet(sURL) 'http://q3msk.ru/
+
+
+	Set http = CreateObject("Microsoft.XMLHTTP")'MSXML2.XMLhttp
+	
+	'On Error Resume Next
+	http.open "GET", sURL, False
+	http.send
+	
+	If Err.Number <> 0 Then
+		Msgbox "XMLhttp error " & Hex(Err.Number) & " " & Err.Description
+	ElseIf http.status <> 200 Then
+		MsgBox "http error " & CStr(http.status) & " " & http.statusText
+	Else
+		HTTPGet = http.responseText
+	End If
+	Set http = Nothing
+	
+	
+End function
+
+'*****************************************************************
+'* POST запрос по HTTP
+'*****************************************************************
+Function HTTPPost(sURL, sRequest)
+	
+	'On Error Resume Next
+	set http=createObject("Microsoft.XMLHTTP")
+	http.open "POST",sURL,false
+	http.setRequestHeader "Content-Type","text/xml"	
+	http.send sRequest
+
+	If Err.Number <> 0 Then
+		Msgbox "XMLhttp error " & Hex(Err.Number) & " " & Err.Description
+	ElseIf http.Status <> 200 Then
+		MsgBox "http error " & CStr(http.status) & " " & http.statusText
+	Else
+		HTTPPost = http.responseText
+	End If
+	
+End function
+
+
+'*****************************************************************
+'* Начальная процедура парсера
+'*****************************************************************
+' 
+Function ParserWhoWhere()
+	
+	
+	sRet = HTTPGet("http://q3msk.ru") 
+
+	g1 = Split (sRet, "</h3>")(2) 'meet'
+	g2 = Split (sRet, "</h3>")(8) 'freeze'
+	g3 = Split (sRet, "</h3>")(9) 'freeze'
+	g4 = Split (sRet, "</h3>")(7) 'freeze'
+	
+	
+	PlayersList1 = Split (g1, "| Player: ")
+	For n = 1 to ubound(PlayersList1)
+		sNikname =  split(PlayersList1(n)," | ")(0)
+		a = a  & sNikname & " ; "
+	Next
+
+	
+	PlayersList1 = Split (g2, "| Player: ")
+	For m = 1 to ubound(PlayersList1)
+		b = b  & split(PlayersList1(m)," | ")(0) & " ; "
+	Next
+
+	PlayersList1 = Split (g3, "| Player: ")
+	For k = 1 to ubound(PlayersList1)
+		c = c  & split(PlayersList1(k)," | ")(0) & " ; "
+	Next
+
+	PlayersList1 = Split (g4, "| Player: ")
+	For b = 1 to ubound(PlayersList1)
+		d = d  & split(PlayersList1(b)," | ")(0) & " ; "
+	Next
+	
+	ret = "<p> MEET: " & a & "</p>" & _
+		  "<p> FREEZE: " & b & "</p>" & _
+		  "<p> FRZ CLAN: " & c & "</p>" & _
+		  "<p> AIM64: " & d & "</p>"
+
+	ret = Replace(ret, "^1", "") '<span style="color:#ff0000;">red</span>
+	ret = Replace(ret, "^2", "") '
+	ret = Replace(ret, "^3", "") '
+	ret = Replace(ret, "^4", "") '
+	ret = Replace(ret, "^5", "") '
+	ret = Replace(ret, "^6", "") '<span style="color:#ff00ff;">violet</span>
+	ret = Replace(ret, "^7", "") '
+	ret = Replace(ret, "^8", "") '
+	ret = Replace(ret, "^9", "") '
+	ret = Replace(ret, "^0", "") '
+
+	ret = Replace(ret, "^b", "") ' 
+	ret = Replace(ret, "^B", "") ' 
+	ret = Replace(ret, "^F", "") '
+	ret = Replace(ret, "^f", "") '
+	ret = Replace(ret, "^n", "") '
+	ret = Replace(ret, "^N", "") '
+
+	ret = Replace(ret, "Klesk", "") '
+	ret = Replace(ret, "Major", "") '
+	ret = Replace(ret, "Ranger", "") '
+	ret = Replace(ret, "Doom", "") '
+	ret = Replace(ret, "Razor", "") '
+	ret = Replace(ret, "Angel", "") '
+	ret = Replace(ret, "Biker", "") '
+	ret = Replace(ret, "Alien3", "") '
+	ret = Replace(ret, "Keel", "") '
+	ret = Replace(ret, "Sarge", "") '
+	ret = Replace(ret, "Death", "") '
+	ret = Replace(ret, "Cadavre", "")' ^x00ff00Skinet Bitterman Uriel Gorre Sorlag
+	ret = Replace(ret, "Bitterman", "") '
+	ret = Replace(ret, "Uriel", "") '
+	ret = Replace(ret, "Gorre", "") '
+	ret = Replace(ret, "Sorlag", "") 
+	ret = Replace(ret, "Bones", "") '
+	ret = Replace(ret, "=Skeletor=", "") '
+	ret = Replace(ret, "Visor", "") ' Daemia
+
+
+
+
+	' //1- красный
+	' //2- зеленый
+	' //3- желтый
+	' //4- синий
+	' //5- голубой
+	' //6- фиолетовый
+	' //7- белый
+	' //^b - мерцание, ^F - мигание 1 часть, ^f - мигание 2 часть
+	' //^xXXXXXX - тени под символами в osp/cpma, где XXXXXX - цвета в шестнадцатиричной системе (0 1 .. a b .. f)
+	' //^xXXXXXX^n^xYYYYYYBobik, где XXXXXX - цвет имени, YYYYYY
+
+	oBoxWhoWhere.innerHTML = ret
+	oq3mskmeet.value = oq3mskmeet.value & " (" & n-1 & ")"
+	oq3mskfreez.value = oq3mskfreez.value & " (" & m-1 & ")"
+	oq3mskfrzclan.value = oq3mskfrzclan.value & " (" & k-1 & ")"
+	oq3mskaim.value = oq3mskaim.value & " (" & b-1 & ")"
+
+	
+	
+	'call SaveFileAs(strScriptdir & "\q3msk.txt", sret)
+	'call EditWithOwnApp(strScriptdir & "\q3msk.txt")
+	'call KillProc("mshta.exe")
+		
+	
+End function
+
+
+
+'=============================================================================================
+' Начальная процедура обработки лаунчера
+'=============================================================================================
+Sub ProcessLauncher()
+    
+	strNewFile = strScriptdir & "\q3launcher.ini"
+	strFileContent1 = ReadFile(strNewFile)
+	strLinesArr = Split(strFileContent1, vbcrlf, -1, 1)
+	
+	'msgbox (ubound(strLinesArr))
+	For each Element in strLinesArr
+	
+		if Element <> "" then
+			ret = split(Element,";")
+			btnText = ret(lbound(ret))
+			id = replace(btnText, " ", "")
+
+			
+			call AddToSelectList (oSelectRunMode, btnText, Element, false)
+			
+			'ret = "<button id=" & """" & "o" & id & """" & " class=" & """" & "button" & """" & " type=" & """" & "button" & """" & " value=" & """" & Element & """" & " title=" & """" & Element & """" & " onClick=" & """" & "DoEvent 1" & """" & " onmouseover=" & """" & "DoEvent 2" & """" & " onmouseout=" & """" & "DoEvent 3" & """" & ">" & btnText & "</button><BR><BR>"
+			'sBtn = sBtn & ret
+		end if
+	Next
+	
+	'oBoxRunQuake.innerHTML = sBtn
+
+
+'LOAD MAPS
+	strText = strScriptdir & "\osp\aim_Maps.txt"
+	strFileContent1 = ReadFile(strText)
+	strLinesArr = Split(strFileContent1, vbcrlf, -1, 1)
+
+	For each Element in strLinesArr
+		if Element <> "" then
+			Element = split(Element," ")(0)
+			call AddToSelectList (oSelect, Element, Element, false)
+		end if
+	Next
+
+' LOAD CFG's
+
+	Set WshShell = CreateObject("WScript.Shell")
+	set oFso = createobject ("Scripting.FileSystemObject")
+	set oFolder = oFso.GetFolder(strScriptdir)
+
+	For Each oSubFolder In oFolder.SubFolders
+		For Each oFile In oSubFolder.Files
+			if instr(oFile.Name, ".cfg") then
+				call AddToSelectList (oSelectCFG, oFile.Name, oFile.Path, false)
+			End If
+		Next
+	Next
+	
+
+End Sub
+
+' процедура обработки файлов статистики и сведения их в один файл
+Sub ProcessDemos()
+
+	Set WshShell = CreateObject("WScript.Shell")
+	strScriptdir = WshShell.CurrentDirectory
+
+	set oFso = createobject ("Scripting.FileSystemObject")
+	set oFolder = oFso.GetFolder(strScriptdir & "\osp\demos")
+
+	sFileStatData = strScriptdir & "\q3demos_list.txt"
+
+	If Not oFso.FolderExists(strScriptdir & "\osp\demos_bkp") Then 
+		oFolderBkp = oFso.CreateFolder (strScriptdir & "\osp\demos_bkp")
+	End If 
+	
+	'Рекурсивно проходимся по всем файлам в подпапках папки статистики
+	For Each oFile In oFolder.Files
+
+		' обрабатываем только файлы с расширением txt
+		if instr(oFile.Name, ".dm_68") then
+
+			sFileText = sFileText & oFile.Name & ";" & oFile.Path & vbcrlf
+			
+		End If
+		
+
+		' после вс("","",true)его перемещаем папку с файлами в отдельную папку хранения статистики
+		' это необходимо чтобы в следующий раз полученная статистика не добавилась повторно
+		oFile.Copy(strScriptdir & "\osp\demos_bkp\")
+		oFile.Delete
+	Next
+
+	' записываем накопленные данные переменной в сводный файл статистики
+	call LogIt (sFileStatData, sFileText)
+
+	' показывем файл в ассоциированном приложении (блокнот или др.)
+	' call EditWithOwnApp(sFileStatData)
+
+End Sub
+
+'*********************************************************************************************
+'*  Удаляет заданные файлы в папке
+'*********************************************************************************************
+Function DeleteCFGFiles()
+
+	set oFso = createobject ("Scripting.FileSystemObject")
+	oFso.DeleteFile strScriptdir & "\osp\q3config.cfg"
+	oFso.DeleteFile strScriptdir & "\baseq3\q3config.cfg"
+
+End Function
+
+
+
+'*********************************************************************************************
+'*  Читает файл
+'*********************************************************************************************
+Function ReadFile(strFilePath)
+
+	set oFso = createobject ("Scripting.FileSystemObject")
+	set oFile = oFso.GetFile(strFilePath)
+	set oFileTextStream = oFile.OpenAsTextStream (1, 0)
+
+	ReadFile = oFileTextStream.ReadAll
+
+	set oFso = nothing
+	set oFile = nothing
+	oFileTextStream.Close
+
+End Function
+
+'*********************************************************************************************
+'*  Сохраняет в файл перезаписывая существующий
+'*********************************************************************************************
+Function SaveFileAs(sFilePath, sText)
+	
+	set oFso = createobject ("Scripting.FileSystemObject")
+	set oFile = oFso.CreateTextFile(sFilePath, -1, 0) 'создать файл, перезаписывая существующий.
+    oFile.WriteLine sText
+    oFile.Close
+
+End Function
+
+'*********************************************************************************************
+'*  Дописывает строку в файл           
+'*********************************************************************************************
+Sub LogIt(sFilePath, sString)
+
+	Set ofso = CreateObject("Scripting.FileSystemObject")
+	Set tf = ofso.OpenTextFile (sFilePath, 8, True)
+	tf.WriteLine sString
+	tf.close
+
+	set oFso = nothing
+End Sub
+
+'*********************************************************************************************
+'*  Открывает файл в блокноте        
+'*********************************************************************************************
+Function EditWithNotepad(sFileFullPath)
+	Set WshShell = CreateObject("WScript.Shell")
+	WshShell.Run "notepad.exe " & sFileFullPath
+	WshShell.AppActivate "notepad.exe"    ' Активизируем окно Блокнота
+	set WshShell = nothing
+End function
+
+'*********************************************************************************************
+'*  Открывает файл в своем блокноте блокноте        
+'*********************************************************************************************
+Function EditWithCustomNotepad(sFileFullPath)
+	Set WshShell = CreateObject("WScript.Shell")
+	WshShell.Run "notepad2.exe " & sFileFullPath
+	WshShell.AppActivate "notepad2.exe"    ' Активизируем окно Блокнота
+	set WshShell = nothing
+End function
+
+'*********************************************************************************************
+'*  Открывает папку в проводнике       
+'*********************************************************************************************
+Function OpenFolderInExplorer(sFolderFullPath)
+	Set objShell = CreateObject("Wscript.Shell")
+	objShell.Run "explorer.exe /e," & sFolderFullPath
+End function
+
+'*********************************************************************************************
+'*  Открывает файл в ассоциированном приложении           
+'*********************************************************************************************
+Function EditWithOwnApp(sFileFullPath)
+	
+	Arr = Split (sFileFullPath, "\") 
+	sFileName = Arr(ubound(Arr))
+	sFileFolder = left (sFileFullPath, len(sFileFullPath) - (len(sFileName)+1))
+	
+	Set objShell = CreateObject("Shell.Application")
+	objShell.ShellExecute sFileName, "", sFileFolder, "", 1
+	set WshShell = nothing
+	
+End function
+
+'*********************************************************************************************
+'*  Функции для OPTION
+'*********************************************************************************************
+
+' Добавляет элемент (фильтрует пустые строки)
+Sub AddToSelectList (oSelect, strText, strValue, bSelected)
+
+	if isarray(strText) = False then
+		if IsTheSame (oSelect.options, strText) <> True then
+			if strText <> "" then
+				set newOption = document.createElement("OPTION")
+				newOption.Text = strText
+				newOption.Value = strValue
+				newOption.Selected = bSelected
+				oSelect.Add newOption
+				set newOption = Nothing
+			End If
+		End If
+	Else
+		For Each Line In strText
+			if IsTheSame (oSelect.options, Line) <> True then
+				if Line <> "" then
+					set newOption = document.createElement("OPTION")
+					newOption.Text = Line
+					newOption.Value = Line
+					oSelect.Add newOption
+					set newOption = Nothing
+				End If
+			End If
+		Next
+	End If
+End Sub
+
+' Получить название выбранного элемента списка
+Function GetFromSelectList (oSelect)
+	For Each oOption In oSelect.options
+		If oOption.selected then GetFromSelectList = oOption.Text
+	Next
+End Function
+
+' Получить данные выбранного элемента из списка
+Function GetValueFromSelectList (oSelect)
+	For Each oOption In oSelect.options
+		If oOption.selected then GetValueFromSelectList = oOption.value
+	Next
+End Function
+
+' Очистить список
+Sub ClearSelectList (oSelect) 
+	For Each oOption In oSelect.options
+		oOption.RemoveNode
+	Next
+End Sub
+
+' Записать в список
+Sub FastSetOptions (oSelect, arrData)
+	set oRootNode = oSelect.parentNode
+	replaceNode(oNewNode)
+End Sub
+
+' Обнаружение дублирующих записей в списке
+Function IsTheSame (oSelectList, strCompareString)
+	ret = False
+	For Each oOption In oSelectList
+		if oOption.value = strCompareString then
+			ret = True
+		End If
+		Next
+	IsTheSame = ret
+End Function
+
+'=============================================================================================
+' ОБРАБОТЧИК СОБЫТИЙ
+'=============================================================================================
+Sub DoEvent(intEvent)
+
+	set oButton = window.event.srcElement' Узнаем кто инициатор события
+		
+	select case intEvent
+
+		case 1 '"onClick" '-------------------------------------------------------------------
+
+			Select Case oButton.ID
+
+				' BUTTON					
+					
+				Case "oBtnEditLouncher" 'oBtnEditLouncher'					
+					'call EditWithNotepad(strScriptdir & "\q3launcher.ini")
+					call EditWithCustomNotepad(strScriptdir & "\q3launcher.ini")
+					
+				Case "oBtnWhoWhere" '
+					call ParserWhoWhere()
+	
+				Case "oBtnEditAutoexec" '
+					sCfgPath = strScriptdir & "\baseq3\Autoexec.cfg"
+					'call EditWithNotepad(sCfgPath)
+					call EditWithCustomNotepad(sCfgPath)
+
+				Case "oBtnDellCFG"
+					call DeleteCFGFiles()
+
+				Case "oBtnOpenBase"
+					sFolderFullPath = strScriptdir & "\baseq3"
+					OpenFolderInExplorer(sFolderFullPath)
+
+				Case "oBtnOpenOSP"
+					sFolderFullPath = strScriptdir & "\osp"
+					OpenFolderInExplorer(sFolderFullPath)
+					
+				Case "oBtnOpenRoot"
+					sFolderFullPath = strScriptdir
+					OpenFolderInExplorer(sFolderFullPath)
+
+				Case "oBtnEditThisLouncher"
+					sCfgPath = strScriptdir & "\launcher.hta"
+					call EditWithCustomNotepad(sCfgPath)
+
+				Case "oBtnRunQ"
+
+					sCMD = GetValueFromSelectList(oSelectRunMode)
+					
+					if instr(sCMD, "local") then
+						sCommand = strScriptdir & "\quake3e.exe " & sCMD & " + map " & GetFromSelectList (oSelect)
+					else
+						sCommand = strScriptdir & "\quake3e.exe " & sCMD
+					end if
+
+					Set WshShell = CreateObject("WScript.Shell")
+					WshShell.Run sCommand' Запускаем
+					WshShell.AppActivate "quake3e.exe"    ' Активизируем окно
+					set WshShell = nothing
+				
+				Case "oBtnEditCFG"
+				
+					sCFGPath = GetValueFromSelectList(oSelectCFG)
+					call EditWithCustomNotepad(sCFGPath)
+				
+				Case "oBtnRunDemo"
+					
+					call ProcessDemos()
+
+					strText = strScriptdir & "\q3demos_list.txt"
+					strFileContent1 = ReadFile(strText)
+					strLinesArr = Split(strFileContent1, vbcrlf, -1, 1)
+
+					For each Element in strLinesArr
+						if Element <> "" then
+							demoName = split(Element,";")(0)
+							demoPath = split(Element,";")(0)
+							call AddToSelectList (oSelectDemo, demoName, demoPath, false)
+						end if
+					Next
+
+					sDemo = GetFromSelectList(oSelectDemo)
+					sCommand = strScriptdir & "\quake3e.exe +demo " & sDemo
+
+					Set WshShell = CreateObject("WScript.Shell")
+					WshShell.Run sCommand' Запускаем
+					WshShell.AppActivate "quake3e.exe"    ' Активизируем окно
+					set WshShell = nothing
+
+				Case Else
+					Msgbox "Run Else Case"
+					
+			End Select
+
+		
+	end select
+End Sub
+
+
+
+
+
+'=============================================================================================
+'ОБРАБОТЧИК ОШИБОК
+'=============================================================================================
+
+If Err.Number <> 0 Then
+	con "Ошибка: " & err.number & " - " & err.Description, vbInformation, err.Source
+	err.Clear
+end if
+'_____________________________________________________________________________________________________
+</script>
+
+<body>
+	
+	
+	<table width="100%" border: 1px solid darkgray>
+	<tr>
+		<td width="40%" valign="top">
+			<select size="15" name="oSelectRunMode" id="oSelectRunMode">
+			</select><BR>
+			
+			<div id="oBoxRunQuake">
+			</div>
+			<select size="5" name="oSelect" id="oSelect">
+			</select>
+		</td>
+		<td width="30%" valign="top">
+			<a href=# id="oBtnRunQ" onClick="DoEvent 1">RUN Q3</a><BR><BR>
+			
+			<a href=# id="oBtnEditAutoexec" onClick="DoEvent 1">EDIT CONFIG</a><BR><BR>
+			
+			<a href=# id="oBtnDellCFG" onClick="DoEvent 1">Delete all default.cfgs</a><BR><BR>
+			
+			<select size="1" name="oSelectCFG" id="oSelectCFG"></select><BR>
+			<a href=# id="oBtnEditCFG" onClick="DoEvent 1">EDIT SELECTED CFG</a><BR><BR>
+		</td>
+		<td width="30%" valign="top">
+			<div id="oBoxStat">
+				
+				<a href=# id="oBtnEditLouncher" onClick="DoEvent 1">EDIT THIS MENU</a><BR>
+				<a href=# id="oBtnEditThisLouncher" onClick="DoEvent 1">EDIT THIS LAUNCHER</a><BR><BR>
+
+				<a href=# id="oBtnOpenRoot" onClick="DoEvent 1">Open Q3 folder</a><BR>
+				<a href=# id="oBtnOpenBase" onClick="DoEvent 1">Open BASEQ3 folder</a><BR>
+				<a href=# id="oBtnOpenOSP" onClick="DoEvent 1">Open OSP folder</a><BR>		
+				<BR>
+
+				<select size="1" name="oSelectDemo" id="oSelectDemo">------test------</select><BR>
+				<a href=# id="oBtnRunDemo" onClick="DoEvent 1">RUN DEMO</a>
+			</div>
+		</td>
+	</tr>
+	</table>
+	<BR>
+	
+	<div id="oBoxWhoWhere">
+		
+	</div>
+		
+
+	
+</body>
+</html>
